@@ -15,10 +15,10 @@ version_configs:
   v2.7.0:
     image_name: gpustackcommunity/mineru:v2.7.0
     custom_framework: cuda
-  v2.6.5-npu-a2:
+  v2.6.5-a2:
     image_name: quay.io/zhyim/mineru:v2.6.5
     custom_framework: cann
-  v2.6.5-npu-a3:
+  v2.6.5-a3:
     image_name: quay.io/zhyim/mineru:v2.6.5-a3
     custom_framework: cann
 default_version: v2.7.0
