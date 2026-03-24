@@ -3,7 +3,7 @@
 # 910b
 FROM quay.m.daocloud.io/ascend/vllm-ascend:v0.11.0rc2
 # 910c
-FROM quay.m.daocloud.io/ascend/vllm-ascend:v0.11.0rc2-a3
+# FROM quay.m.daocloud.io/ascend/vllm-ascend:v0.11.0rc2-a3
 # Base image containing the LMDeploy inference environment, requiring ARM(AArch64) CPU + Ascend NPU.
 # FROM crpi-4crprmm5baj1v8iv.cn-hangzhou.personal.cr.aliyuncs.com/lmdeploy_dlinfer/ascend:mineru-a2
 
