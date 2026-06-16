@@ -50,6 +50,22 @@ default_backend_param:
 default_env:
   NCCL_DEBUG: INFO
 
+# Optional.
+# Normalizes how backend flags are rendered in the start command.
+# Choose one of:
+#   space  -> --key value   (e.g. llama.cpp expects this form)
+#   equal  -> --key=value
+# Leave unset to keep parameters exactly as entered (no normalization).
+# Multi-value flags always stay space-separated; single-dash flags (-ngl) are untouched.
+parameter_format: space
+
+# Optional.
+# Commonly used parameters shown as quick-input suggestions in the deploy form.
+# These are hints only: not prefilled and with no runtime effect.
+common_parameters:
+  - --ctx-size
+  - --gpu-layers
+
 # Required.
 # Defines backend versions and their runtime configuration.
 version_configs:
