@@ -5,9 +5,6 @@ description: |
   Based on the Ascend CANN stack, it supports multiple embedding and reranker models with optimized performance on Ascend hardware.
 health_check_path: /health
 default_run_command: --model-id {{model_path}} -p {{port}}
-default_env:
-  ENABLE_BOOST: "True"
-  AUTO_TRUNCATE: "true"
 version_configs:
   26.0.0-a2:
     image_name: swr.cn-south-1.myhuaweicloud.com/ascendhub/mis-tei:26.0.0-910b-openeuler24.03-py3.11
