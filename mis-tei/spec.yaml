@@ -3,13 +3,18 @@ description: |
   mis-tei (https://www.hiascend.com/developer/ascendhub/detail/07a016975cc341f3a5ae131f2b52399d) is an inference service for text embedding and reranking models in the Ascend ecosystem.
   It provides efficient vector generation and relevance scoring capabilities, commonly used in RAG, semantic search, and retrieval systems.
   Based on the Ascend CANN stack, it supports multiple embedding and reranker models with optimized performance on Ascend hardware.
-  This backend uses a repackaged image to simplify deployment and integration within GPUStack environments.
 health_check_path: /health
 default_run_command: --model-id {{model_path}} -p {{port}}
-default_env:
-  ENABLE_BOOST: "True"
-  AUTO_TRUNCATE: "true"
 version_configs:
+  26.0.0-a2:
+    image_name: swr.cn-south-1.myhuaweicloud.com/ascendhub/mis-tei:26.0.0-910b-openeuler24.03-py3.11
+    custom_framework: cann
+  26.0.0-a3:
+    image_name: swr.cn-south-1.myhuaweicloud.com/ascendhub/mis-tei:26.0.0-a3-openeuler24.03-py3.11
+    custom_framework: cann
+  26.0.0-310p:
+    image_name: swr.cn-south-1.myhuaweicloud.com/ascendhub/mis-tei:26.0.0-310p-openeuler24.03-py3.11
+    custom_framework: cann
   7.3.0-a2:
     image_name: gpustackcommunity/mis-tei:7.3.0-800I-A2-aarch64
     custom_framework: cann
@@ -19,4 +24,4 @@ version_configs:
   7.3.0-310p:
     image_name: gpustackcommunity/mis-tei:7.3.0-300I-Duo-aarch64
     custom_framework: cann
-default_version: 7.3.0-a2
+default_version: 26.0.0-a2
