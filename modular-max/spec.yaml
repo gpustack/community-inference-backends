@@ -1,0 +1,55 @@
+backend_name: Modular MAX
+description: |
+  Modular MAX (https://docs.modular.com/intro) is a heterogeneous inference framework for serving text, embedding, vision, image, and video models on CPUs and NVIDIA or AMD GPUs.
+  It exposes OpenAI-compatible APIs and the Open Responses API through `max serve`.
+
+  Model and precision support is architecture-specific. Check the MAX supported-model matrix before deployment:
+  https://docs.modular.com/models/
+health_check_path: /v1/health
+default_version: 26.4.0-cuda
+default_run_command: >-
+  --model {{model_path}} --port {{port}} --served-model-name {{model_name}}
+default_env:
+  MAX_SERVE_API_TYPES: '["openai","responses"]'
+parameter_format: space
+common_parameters:
+  - --task
+  - --weight-path
+  - --quantization-encoding
+  - --kv-cache-format
+  - --model-override
+  - --device-memory-utilization
+  - --max-length
+  - --max-batch-size
+  - --data-parallel-degree
+  - --pipeline-role
+  - --trust-remote-code
+  - --enable-structured-output
+  - --pretty-print-config
+version_configs:
+  26.4.0-cuda:
+    image_name: modular/max-nvidia-full:26.4.0
+    run_command: >-
+      --model {{model_path}} --port {{port}} --served-model-name {{model_name}}
+      --devices gpu:all
+    custom_framework: cuda
+  26.4.0-rocm:
+    image_name: modular/max-amd:26.4.0
+    run_command: >-
+      --model {{model_path}} --port {{port}} --served-model-name {{model_name}}
+      --devices gpu:all
+    custom_framework: rocm
+  26.4.0-cpu:
+    image_name: modular/max-nvidia-base:26.4.0
+    run_command: >-
+      --model {{model_path}} --port {{port}} --served-model-name {{model_name}}
+      --devices cpu
+    custom_framework: cpu
+framework_index_map:
+  cuda:
+    - 26.4.0-cuda
+  rocm:
+    - 26.4.0-rocm
+  cpu:
+    - 26.4.0-cpu
+is_built_in: false
