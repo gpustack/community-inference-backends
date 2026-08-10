@@ -100,4 +100,10 @@ Use `--pretty-print-config` while diagnosing a deployment to record the resolved
 
 ## Licensing
 
-The Modular source repository is Apache-2.0 with LLVM exceptions, while use and distribution of MAX and Mojo binaries are governed by the [Modular Community License](https://www.modular.com/legal/max-mojo-license). Model checkpoints retain their own licenses. Review and accept all applicable terms before deployment.
+The Modular source repository is Apache-2.0 with LLVM exceptions, while downloading or using the MAX and Mojo SDK or container is governed by the [Modular Community License](https://www.modular.com/legal/community). This backend definition references Modular's official container images; it does not redistribute the MAX SDK.
+
+The Community License is free but is not an open-source software license. Non-production use has no device limit. For commercial production, it permits unlimited x86, ARM, and NVIDIA PTX devices, but limits other accelerator types to eight devices in aggregate unless Modular grants a larger license. An entity starting a commercial production deployment must notify Modular within 30 days, permit identification as an SDK user, and display "Powered by Modular." The license also restricts redistribution, sublicensing, reverse engineering, removal of notices, and unsupported hardware use, and permits collection of usage telemetry.
+
+The included MAX logo is an approved asset from Modular's [trademark policy](https://www.modular.com/legal/trademark). MAX® and Mojo® are trademarks of Modular, Inc. used under license. This community integration is not operated by or endorsed by Modular.
+
+Model checkpoints retain their own licenses. Review and accept all applicable terms before deployment.
