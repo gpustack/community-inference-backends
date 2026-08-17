@@ -1,0 +1,51 @@
+backend_name: TokenSpeed
+description: |
+  TokenSpeed (https://github.com/lightseekorg/tokenspeed) is an OpenAI-compatible
+  inference engine with hybrid linear-attention support and MTP speculative decoding.
+  It has no official serving image; build from lightseekorg/tokenspeed-runner
+  (see tokenspeed/README.md). Use 0.1.3-sm90 on Hopper (H20/H200) and
+  0.1.3-sm100 on Blackwell (B200/B300).
+health_check_path: /v1/models
+default_version: 0.1.3-sm90
+is_built_in: false
+parameter_format: space
+default_entrypoint: tokenspeed serve
+default_run_command: >
+  {{model_path}}
+  --port {{port}}
+  --host {{worker_ip}}
+  --served-model-name {{model_name}}
+  --world-size {{gpu_count}}
+  --chunked-prefill-size 8192
+  --max-num-seqs 128
+  --disable-kvstore
+default_env:
+  HOME: /opt/ts-home
+  FLASHINFER_CACHE_DIR: /opt/ts-cache/flashinfer
+  TRITON_CACHE_DIR: /opt/ts-cache/triton
+common_parameters:
+  - --gpu-memory-utilization
+  - --max-model-len
+version_configs:
+  0.1.3-sm90:
+    image_name: swr.cn-south-1.myhuaweicloud.com/gpustack/tokenspeed:0.1.3-sm90-cu130-20260815
+    entrypoint: tokenspeed serve
+    run_command: >
+      {{model_path}}
+      --port {{port}}
+      --host {{worker_ip}}
+      --served-model-name {{model_name}}
+    custom_framework: cuda
+  0.1.3-sm100:
+    image_name: swr.cn-south-1.myhuaweicloud.com/gpustack/tokenspeed:0.1.3-cu130-20260815-fix
+    entrypoint: tokenspeed serve
+    run_command: >
+      {{model_path}}
+      --port {{port}}
+      --host {{worker_ip}}
+      --served-model-name {{model_name}}
+    custom_framework: cuda
+framework_index_map:
+  cuda:
+    - 0.1.3-sm90
+    - 0.1.3-sm100
