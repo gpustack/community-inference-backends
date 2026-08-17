@@ -28,7 +28,7 @@ common_parameters:
   - --max-model-len
 version_configs:
   0.1.3-sm90:
-    image_name: swr.cn-north-4.myhuaweicloud.com/yiminghub/tokenspeed:0.1.3-sm90-cu130-20260815
+    image_name: swr.cn-south-1.myhuaweicloud.com/gpustack/tokenspeed:0.1.3-sm90-cu130-20260815
     entrypoint: tokenspeed serve
     run_command: >
       {{model_path}}
@@ -37,7 +37,7 @@ version_configs:
       --served-model-name {{model_name}}
     custom_framework: cuda
   0.1.3-sm100:
-    image_name: swr.cn-north-4.myhuaweicloud.com/yiminghub/tokenspeed:0.1.3-cu130-20260815-fix
+    image_name: swr.cn-south-1.myhuaweicloud.com/gpustack/tokenspeed:0.1.3-cu130-20260815-fix
     entrypoint: tokenspeed serve
     run_command: >
       {{model_path}}
