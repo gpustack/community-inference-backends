@@ -46,6 +46,7 @@ The following community backends are currently available:
 - **LLM**
   - [llama.cpp](https://github.com/ggml-org/llama.cpp)
   - [TensorRT-LLM](https://github.com/NVIDIA/TensorRT-LLM) [Docs](https://nvidia.github.io/TensorRT-LLM/)
+  - [TokenSpeed](https://github.com/lightseekorg/tokenspeed) [Docs](https://lightseek.org/tokenspeed/)
 
 - **Vision / OCR**
   - [MinerU](https://github.com/opendatalab/MinerU) [Docs](https://opendatalab.github.io/MinerU/)
