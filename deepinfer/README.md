@@ -137,4 +137,3 @@ and inference on your target hardware.
 The serving implementation and container source are maintained in
 [gpustack/DeepInfer-server](https://github.com/gpustack/DeepInfer-server). Report
 serving issues there and community integration issues in this repository.
-
