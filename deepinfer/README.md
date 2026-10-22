@@ -138,5 +138,3 @@ The serving implementation and container source are maintained in
 [gpustack/DeepInfer-server](https://github.com/gpustack/DeepInfer-server). Report
 serving issues there and community integration issues in this repository.
 
-The catalog logo is the [DeepSeek organization avatar](https://github.com/deepseek-ai),
-reused from the upstream backend definition. It is not a separate DeepInfer logo.
