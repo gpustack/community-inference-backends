@@ -1,0 +1,50 @@
+backend_name: DeepInfer
+description: >-
+  OpenAI-compatible text chat completions for DeepSeek-V4.1-Flash,
+  powered by DeepInfer and deepseek-recipe. Requires a single Linux worker
+  with NVIDIA SM100 GPUs (B200/GB200), sufficient GPU and host memory,
+  and working RDMA. Multi-worker deployments and image inputs are not supported.
+
+health_check_path: /health
+parameter_format: space
+
+# Set the memory-lock and stack limits before replacing the shell.
+default_entrypoint: >-
+  /bin/bash -c 'ulimit -l unlimited && ulimit -s 65536 && exec deepinfer-server "$@"' deepinfer-server
+
+default_run_command: >-
+  "{{model_path}}"
+  --host 0.0.0.0
+  --port {{port}}
+  --served-model-name "{{model_name}}"
+  --expert-parallel-size {{gpu_count}}
+  --data-parallel-size 1
+  --trust-remote-code
+
+default_backend_param:
+  - --max-model-len=32768
+  - --max-num-seqs=16
+  - --max-num-batched-tokens=32768
+  - --startup-timeout=3600
+
+default_env:
+  DEEPINFER_JIT_CACHE_DIR: /var/lib/gpustack/cache/deepinfer/jit
+  GPUSTACK_HOST_IPC: "true"
+  TOKENIZERS_PARALLELISM: "false"
+
+common_parameters:
+  - --max-model-len
+  - --max-num-seqs
+  - --max-num-batched-tokens
+  - --gpu-memory-utilization
+  - --data-parallel-size
+  - --context-parallel-size
+  - --startup-timeout
+  - --request-timeout
+
+version_configs:
+  latest:
+    image_name: quay.io/gpustack/deepinfer-server:latest
+    custom_framework: cuda
+
+default_version: latest
