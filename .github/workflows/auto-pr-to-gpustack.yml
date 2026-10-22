@@ -18,10 +18,20 @@ jobs:
   build-and-pr:
     runs-on: ubuntu-latest
     steps:
+      - name: Sync fork with upstream
+        env:
+          GH_TOKEN: ${{ secrets.GP_PAT }}
+        run: |
+          gh repo sync foyoux/gpustack \
+            --source gpustack/gpustack \
+            --branch main \
+            --force
+
       - name: Checkout gpustack
         uses: actions/checkout@v4
         with:
           repository: gpustack/gpustack
+          ref: main
 
       - name: Run make install
         run: make install
