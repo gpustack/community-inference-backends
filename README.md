@@ -48,17 +48,23 @@ The following community backends are currently available:
   - [llama.cpp](https://github.com/ggml-org/llama.cpp)
   - [TensorRT-LLM](https://github.com/NVIDIA/TensorRT-LLM) [Docs](https://nvidia.github.io/TensorRT-LLM/)
   - [TokenSpeed](https://github.com/lightseekorg/tokenspeed) [Docs](https://lightseek.org/tokenspeed/)
-  - [Modular MAX](https://docs.modular.com/intro) [Docs](https://docs.modular.com/models/)
+  - [Modular MAX](https://docs.modular.com/intro) [Docs](https://docs.modular.com/models/) (text and vision-language models)
 
 - **Vision / OCR**
   - [MinerU](https://github.com/opendatalab/MinerU) [Docs](https://opendatalab.github.io/MinerU/)
   - [PaddleX-GenAI-Server](https://github.com/PaddlePaddle/PaddleX) [Docs](https://www.paddleocr.ai/main/version3.x/pipeline_usage/PaddleOCR-VL.html)
 
+- **Image / Video Generation**
+  - [Modular MAX](https://docs.modular.com/intro) [Docs](https://docs.modular.com/models/) (image generation is experimental; video is untested)
+
 - **Embedding / Reranker / Sequence Classification**
+  - [Modular MAX](https://docs.modular.com/intro) [Docs](https://docs.modular.com/models/) (embeddings only)
   - [Text-Embeddings-Inference](https://github.com/huggingface/text-embeddings-inference) [Docs](https://huggingface.co/docs/text-embeddings-inference/index)
   - [mis-tei](https://www.hiascend.com/developer/ascendhub/detail/07a016975cc341f3a5ae131f2b52399d)
 
 - **Audio**
+  - Text-to-Music
+    - [Modular MAX](https://docs.modular.com/intro) [Docs](https://docs.modular.com/models/) (MiniMax-Music3)
   - Text-to-Speech
     - [Kokoro-FastAPI](https://github.com/remsky/Kokoro-FastAPI)
 

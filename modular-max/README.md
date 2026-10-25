@@ -47,6 +47,83 @@ MAX's [supported-model matrix](https://docs.modular.com/models/) and `max list` 
 
 Speculative decoding drafters (Eagle, Eagle3, MTP, DFlash, DSpark) are also registered; they are passed with `--speculative-method` and `--draft-model-path` rather than deployed as standalone models. Exaone was removed from the registry between 26.4 and 26.6.
 
+## Non-LLM deployments
+
+The same **Modular MAX** backend and versions serve all the modalities above; no separate LLM, image, or audio backend needs to be enabled. The categories in this repository's top-level README are for discovery, not runtime restrictions. GPUStack's community-backend spec has no model-category field: set the category on each **deployment**, not in `spec.yaml`.
+
+In GPUStack, enable Modular MAX under **Inference Backends**, then deploy a model from Hugging Face, ModelScope, or a local path. Select **Modular MAX** and a version compatible with the worker. In the deployment's advanced settings, set the model category explicitly rather than relying on **Auto** for architectures GPUStack does not recognize:
+
+| Workload | Example repository | GPUStack category | Backend parameters | Inference route |
+| --- | --- | --- | --- | --- |
+| Vision-language (image input, text output) | `Qwen/Qwen3.5-4B` | `llm` (LLM) | `--device-memory-utilization 0.8` | `/v1/chat/completions` |
+| Embeddings | `Qwen/Qwen3-Embedding-0.6B` | `embedding` (Embedding) | `--task embeddings_generation --device-memory-utilization 0.3` | `/v1/embeddings` |
+| Image generation (experimental) | `black-forest-labs/FLUX.2-klein-4B` | `image` (Image) | Automatic MAX task detection | `/v1/responses` |
+| Music generation | `MiniMaxAI/MiniMax-Music3` | `text_to_speech` (Text-to-Speech) | Automatic MAX task detection | `/v1/audio/speech` |
+
+`text_to_speech` is GPUStack's available audio-output category, not a claim that MiniMax-Music3 is a conventional TTS model. MAX's `--task` and GPUStack's category are separate settings: one selects the MAX pipeline, the other controls GPUStack's model listing and playground selection. The image playground uses `/v1/images/generations`, which is not MAX 26.6.0's image-generation API; use `/v1/responses` with the request format below instead. For Music3, prefer the explicit API request below over the speech playground: it supplies the required style instructions, WAV format, and MAX-specific duration control.
+
+For API deployments, send the category as a list in `POST /v2/models`, along with `enable_model_route: true`. For example, this request selects the previously tested embedding configuration (add `cluster_id` when required by your installation):
+
+```json
+{
+  "name": "max-embedding",
+  "source": "huggingface",
+  "huggingface_repo_id": "Qwen/Qwen3-Embedding-0.6B",
+  "backend": "Modular MAX",
+  "backend_version": "26.6.0-cuda",
+  "categories": ["embedding"],
+  "backend_parameters": [
+    "--task embeddings_generation",
+    "--device-memory-utilization 0.3"
+  ],
+  "replicas": 1,
+  "enable_model_route": true
+}
+```
+
+For image or music deployments, replace `name`, `huggingface_repo_id`, and `categories` using the table and remove the embedding-specific `backend_parameters`. Keep the complete model repository; do not select a single weight file. Deploy these examples one at a time on a 24 GB GPU. The image and audio timings below came from direct MAX containers, **not** GPUStack gateway tests; only text and embeddings were tested through GPUStack in #36.
+
+### Image request
+
+After the image deployment is running, send this JSON to GPUStack's `/v1/responses` with an API key. `model` must match the GPUStack model route name (here, `max-image`):
+
+```json
+{
+  "model": "max-image",
+  "input": "A red sailboat on a calm blue lake",
+  "seed": 42,
+  "provider_options": {
+    "image": {
+      "width": 512,
+      "height": 512,
+      "response_format": "b64_json",
+      "output_format": "png"
+    }
+  }
+}
+```
+
+The generated image is in an `output_image` content part under `output[].content[]`; decode its `image_data` field from base64. Requesting inline data avoids needing to retrieve a MAX instance-local media URL through the gateway. This is not an OpenAI Images request: do not substitute `prompt`, `size`, or `/v1/images/generations`. FLUX.2-klein-4B returned colored noise in the original RTX 3090 tests, including with BF16 forced. A successful response does **not** establish usable image quality.
+
+### Music request
+
+After the music deployment is running, send this JSON to `/v1/audio/speech`, using its model route name (here, `max-music`), and save the binary response as a WAV file:
+
+```json
+{
+  "model": "max-music",
+  "input": "[instrumental]",
+  "instructions": "Instrumental ambient music with soft piano and warm synth pads",
+  "audio_duration": 10,
+  "response_format": "wav",
+  "seed": 42
+}
+```
+
+In MAX 26.6.0, `instructions` is required and describes the style; `input` carries lyrics or a model-specific structure tag. `voice` is optional and ignored. Only WAV output is supported; MP3, SSE streaming, and speed changes are rejected. Allow a long first-request timeout: Music3's first 10-second render took 881 seconds while its stages compiled and peaked near 18.7 GB VRAM in the original test. GPUStack or an upstream proxy may also need a longer request timeout.
+
+Video generation is listed from MAX's model registry only. No Wan model was run in #36, so this guide does not present a tested GPUStack video deployment.
+
 ## API routes
 
 The backend enables `MAX_SERVE_API_TYPES='["openai","responses"]'`. The useful route depends on the task resolved for the selected model:
@@ -123,6 +200,22 @@ The same catalog card was then loaded into GPUStack 2.2.3 with one worker on tha
 | `Qwen/Qwen3-0.6B`, Hugging Face | `26.6.0-cuda`, `--device-memory-utilization 0.5 --enable-structured-output --max-length 8192` | running after 283 s including the download (121 s on redeploy); chat and streaming passed; the tool call stayed as `<tool_call>` text in `content`; structured output returned the schema's keys with meaningless values |
 | `Qwen/Qwen3-Embedding-0.6B`, local path | `26.6.0-cuda`, `--task embeddings_generation --device-memory-utilization 0.3` | running after 101 s; 1024-dimensional embeddings |
 | `sentence-transformers/all-MiniLM-L6-v2`, ModelScope | `26.6.0-cpu` | running after 71 s including the download; 384-dimensional embeddings |
+
+## GPUStack performance controls
+
+GPUStack's **Enable Extended KV Cache** and **Enable Speculative Decoding** controls are available only for its built-in vLLM/SGLang integrations. This community backend does not translate those controls into MAX options; use **Backend Parameters** for MAX-specific settings instead.
+
+MAX 26.6.0 supports speculative decoding in preview for specific target/draft pairs. For example, the [26.6.0 guide](https://github.com/modular/modular/blob/c6fa49f712fe15c99d0461ad2baaf2a15cbc58ce/docs/max/serve/speculative-decoding.mdx) pairs `meta-llama/Llama-3.1-8B-Instruct` with a trained EAGLE draft:
+
+```text
+--speculative-method eagle
+--draft-model-path atomicapple0/EAGLE-LLaMA3.1-Instruct-8B
+--num-speculative-tokens 2
+```
+
+Add these parameters to the Llama deployment, not to an arbitrary target model. The draft must be accessible to MAX inside the container, and needs additional memory headroom. A Hub ID requires container network access and any necessary model credentials; a local path must be mounted inside the container. The example is from upstream documentation and has **not** been tested for this GPUStack backend. It does not enable GPUStack-managed draft staging through the disabled control.
+
+Extended KV caching is a separate limitation: the public 26.6.0 image tested here lacks `kv_tier_connector` (see [Memory and KV cache](#memory-and-kv-cache)). Changing `rust_tiered` to its `tiered` alias does not remove that dependency. GPU prefix caching is already enabled by default, but does not provide a CPU/disk tier. Neither GPUStack's LMCache settings nor its speculative-decoding configuration can be passed unchanged to MAX.
 
 ## Parameters
 
