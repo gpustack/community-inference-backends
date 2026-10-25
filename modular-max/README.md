@@ -1,11 +1,14 @@
 # Modular MAX community backend
 
-[Modular MAX](https://docs.modular.com/intro) compiles and serves generative AI models across CPUs and NVIDIA or AMD GPUs. This backend runs the official MAX 26.6.0 containers and enables both the OpenAI-compatible endpoints and the Open Responses endpoint.
+[Modular MAX](https://docs.modular.com/intro) compiles and serves generative AI models across CPUs and NVIDIA or AMD GPUs. This backend defaults to the official MAX 26.7.0 containers and enables both the OpenAI-compatible endpoints and the Open Responses endpoint. The 26.6.0 versions remain available for existing deployments.
 
 ## Backend versions
 
 | GPUStack version | Official image | Framework | Platforms |
 | --- | --- | --- | --- |
+| `26.7.0-cuda` | `modular/max-nvidia-full:26.7.0` | `cuda` | linux/amd64, linux/arm64 |
+| `26.7.0-rocm` | `modular/max-amd:26.7.0` | `rocm` | linux/amd64 |
+| `26.7.0-cpu` | `modular/max-nvidia-base:26.7.0` | `cpu` | linux/amd64, linux/arm64 |
 | `26.6.0-cuda` | `modular/max-nvidia-full:26.6.0` | `cuda` | linux/amd64, linux/arm64 |
 | `26.6.0-rocm` | `modular/max-amd:26.6.0` (ROCm 7.2) | `rocm` | linux/amd64 |
 | `26.6.0-cpu` | `modular/max-nvidia-base:26.6.0` | `cpu` | linux/amd64, linux/arm64 |
@@ -17,6 +20,18 @@ These are the device families MAX itself supports in Linux containers. Only the 
 The CPU version is meant for CPU-only workers. On a worker that has GPUs, GPUStack 2.2.3 still assigns one GPU to a `26.6.0-cpu` instance and passes it into the container: MAX computes on the CPU because of `--devices cpu`, but its processes hold about 0.5 GB of CUDA context on that GPU. GPUStack's custom-backend scheduler only considers CPU-only placement when the model has CPU offloading enabled and no GPU fits.
 
 Apple GPU execution is not included. Community backends currently run Linux containers, while Apple acceleration requires a native macOS MAX package and Metal device access. A container configuration marked as `mps` would therefore advertise hardware it cannot reach.
+
+## Upgrading to 26.7
+
+The [26.7 release notes](https://max.modular.com/releases/v26.7/) describe changes beyond the container tags:
+
+- Jenga is now the default KV cache, including for local paths. `MODULAR_USE_LEGACY_KV_CACHE=1` opts out, but the legacy manager no longer supports KV connectors or disaggregated inference.
+- Structured output uses `xgrammar` only; remove `--structured-output-backend llguidance`. The 26.6 validation failures below are historical results, not a 26.7 retest or a claim that the upgrade fixes them.
+- DSpark drafts now require `--speculative-method dspark`, not `dflash`. `--rejection-sampling-strategy` was removed. Use release-matched target/draft pairs and leave memory headroom.
+- `MAX_SERVE_MAX_MEDIA_BYTES` (100 MiB by default) limits aggregate resolved image/video data and each decoded image. It is separate from the request-body limit `MAX_SERVE_MAX_REQUEST_BYTES`.
+- MAX adds `/v1/decisions` and `/v1/systemone` for text-model scoring, plus MiMo-V2.6-Flash and Muse Glimmer. These routes and models have not been validated through GPUStack's gateway; this upgrade does not add gateway routing or model-catalog entries for them.
+
+The 26.7 image platforms were checked against the registry manifests. The GPU results below remain specific to 26.6.0; CUDA/ROCm inference has not been rerun for 26.7.0.
 
 ## Model sources
 
@@ -97,9 +112,17 @@ Hardware support is also precision-specific. In particular, native NVFP4 matrix 
 
 `--device-memory-utilization` (default `0.9`) is the fraction of free device memory MAX takes; whatever the weights leave of it becomes the KV cache. On a consumer GPU that also drives a display, the default can leave too little headroom for activations: Qwen3-4B on a 24 GB RTX 3090 ran out of CUDA memory under 64 concurrent requests at the default and was stable at `--device-memory-utilization 0.8`.
 
-Prefix caching is on by default and reuses prefixes that are still in the GPU KV cache (`--no-enable-prefix-caching` turns it off). The public 26.6.0 containers have no host or disk KV tier. `--kv-connector-config '{"type":"rust_tiered"}'` (and its `tiered` alias) needs a Rust `kv_tier_connector` extension that is not shipped in the images, so the model worker exits with `ModuleNotFoundError: No module named 'kv_tier_connector'`. The remaining `dkv` connector needs an external block store endpoint. Once a prefix is evicted from GPU memory, MAX recomputes it.
+Prefix caching is on by default and reuses prefixes that are still in the GPU KV cache (`--no-enable-prefix-caching` turns it off). The tested public 26.6.0 CUDA image had no usable host or disk KV tier: `--kv-connector-config '{"type":"rust_tiered"}'` (and its `tiered` alias) failed because the native `kv_tier_connector` extension was missing. The 26.7.0 ARM64 base image also has no importable `kv_tier_connector`; the CUDA/ROCm 26.7 images have not been checked for this extension. Source availability of the connector does not establish that a given image ships it. The `dkv` connector requires a separate native client and external block-store service, not GPUStack's LMCache settings. GPU prefix caching alone does not restore prefixes evicted from device memory.
 
 ## Validation notes
+
+For 26.7.0, `modular/max-nvidia-base:26.7.0` was run in a local Linux ARM64 Docker container with `--devices cpu`, the spec's served-model-name/port arguments, and both API types enabled. `sentence-transformers/all-MiniLM-L6-v2` compiled and became ready; `/v1/health` and `/v1/models` returned 200, and `/v1/embeddings` returned two finite 384-dimensional vectors. An unknown model name was rejected with 400. All 45 suggested parameters were present in that image's `max serve --help`. This was a direct-container CPU test, not a GPUStack deployment or CUDA/ROCm, image/audio, speculative-decoding, or extended-KV test.
+
+### Spec regression checks
+
+Run `uv run --no-project --with pyyaml python modular-max/test_spec.py` from the repository root to check the default, retained versions, image tags, framework map, command templates, and API defaults. Bundle with `uv run --no-project --with pyyaml python scripts/bundle.py`.
+
+### Historical 26.6.0 validation
 
 MAX 26.6.0 was run on one NVIDIA RTX 3090 (24 GB, also driving a desktop) with a 64 GiB x86-64 host, using the same images and commands as the backend versions. The ROCm version and ARM64 hosts were not tested.
 
@@ -141,9 +164,17 @@ Use `--pretty-print-config` while diagnosing a deployment to record the resolved
 
 ## Licensing
 
-The Modular source repository is Apache-2.0 with LLVM exceptions, while downloading or using the MAX and Mojo SDK or container is governed by the [Modular Community License](https://www.modular.com/legal/community). This backend definition references Modular's official container images; it does not redistribute the MAX SDK.
+According to Modular's [26.7 announcement](https://www.modular.com/blog/max-license), MAX binaries and newly available internals are covered by the [MAX License](https://www.modular.com/legal/max-license), last modified October 21, 2026. Separately licensed components (including Apache-2.0 with LLVM exceptions) retain their own terms. MAX is source-available, not wholly open-source under a permissive license. This backend only references official container images and does not redistribute MAX binaries.
 
-The Community License is free but is not an open-source software license. Non-production use has no device limit. For commercial production, it permits unlimited x86, ARM, and NVIDIA PTX devices, but limits other accelerator types to eight devices in aggregate unless Modular grants a larger license. An entity starting a commercial production deployment must notify Modular within 30 days, permit identification as an SDK user, and display "Powered by Modular." The license also restricts redistribution, sublicensing, reverse engineering, removal of notices, and unsupported hardware use, and permits collection of usage telemetry.
+The new terms permit no-charge, royalty-free commercial use. Unlike the older Community License summarized for 26.6, they do not impose an eight-device accelerator limit or a general 30-day production-notification requirement. Important remaining conditions include:
+
+- Redistributed applications must add material functionality beyond MAX; MAX portions remain subject to its license, and distributions must include a human-readable copy of the terms and preserve proprietary notices.
+- Modified MAX-licensed source may be published only in a fork of Modular's official repository for contributing back. Separately licensed Apache components are not narrowed by this restriction.
+- MAX-licensed material must not be used as AI training data or AI input to produce a MAX replacement. AI-assisted analysis, improvements, explanations, and interoperating applications are explicitly allowed.
+- A legal entity commercially offering MAX as a hosted/managed AI training or inference service to other legal entities must use the **Modular Accelerated** mark and obtain Modular's written approval before using it (section 3.3). This is not a blanket branding requirement for every internal deployment.
+- Telemetry and usage-data collection remain permitted. The [official FAQ](https://forum.modular.com/t/max-license-faq/3578) documents `MODULAR_TELEMETRY_ENABLED=0` and `MAX_SERVE_DISABLE_TELEMETRY=1` to opt out of low-level and serving telemetry, respectively.
+
+Each release remains governed by the terms supplied with or displayed at its download/installation; retaining a 26.6 version does not relicense it. There is a packaging discrepancy worth checking: the `max/v26.7.0` tag's [`Licenses/LICENSE`](https://github.com/modular/modular/blob/527d069ee11a41ac5320af1f9402db0a66b2b868/Licenses/LICENSE) still carries the August 18, 2026 Community License, while Modular's release announcement and legal page describe the October 21 MAX License. Check the terms accompanying your selected artifact rather than assuming all bundled notices have been updated. This is a deployment-oriented summary, not legal advice.
 
 The included MAX logo is an approved asset from Modular's [trademark policy](https://www.modular.com/legal/trademark). MAX® and Mojo® are trademarks of Modular, Inc. used under license. This community integration is not operated by or endorsed by Modular.
 

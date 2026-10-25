@@ -6,7 +6,7 @@ description: |
   Model and precision support is architecture-specific. Check the MAX supported-model matrix before deployment:
   https://docs.modular.com/models/
 health_check_path: /v1/health
-default_version: 26.6.0-cuda
+default_version: 26.7.0-cuda
 default_run_command: >-
   --model {{model_path}} --port {{port}} --served-model-name {{model_name}}
 default_env:
@@ -59,6 +59,24 @@ common_parameters:
   - --use-vendor-blas
   - --pretty-print-config
 version_configs:
+  26.7.0-cuda:
+    image_name: modular/max-nvidia-full:26.7.0
+    run_command: >-
+      --model {{model_path}} --port {{port}} --served-model-name {{model_name}}
+      --devices gpu:all
+    custom_framework: cuda
+  26.7.0-rocm:
+    image_name: modular/max-amd:26.7.0
+    run_command: >-
+      --model {{model_path}} --port {{port}} --served-model-name {{model_name}}
+      --devices gpu:all
+    custom_framework: rocm
+  26.7.0-cpu:
+    image_name: modular/max-nvidia-base:26.7.0
+    run_command: >-
+      --model {{model_path}} --port {{port}} --served-model-name {{model_name}}
+      --devices cpu
+    custom_framework: cpu
   26.6.0-cuda:
     image_name: modular/max-nvidia-full:26.6.0
     run_command: >-
@@ -79,9 +97,12 @@ version_configs:
     custom_framework: cpu
 framework_index_map:
   cuda:
+    - 26.7.0-cuda
     - 26.6.0-cuda
   rocm:
+    - 26.7.0-rocm
     - 26.6.0-rocm
   cpu:
+    - 26.7.0-cpu
     - 26.6.0-cpu
 is_built_in: false
