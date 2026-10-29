@@ -1,0 +1,78 @@
+backend_name: vllm-sr
+description: >-
+  Model runtime of vLLM Semantic Router, serving decision model families over
+  the System One decision API (POST /v1/systemone): Decision 3.0 (d3-ultra,
+  d3-turbo, d3, d3-flash, d3-mini, d3-nano, d3-lite, d3-edge), Decision 2.0,
+  Decision 1.0 and Vela. Decision models answer typed questions (choice,
+  yes/no, score, box) about text, images and videos with a probability per
+  answer, without generating text. Deploy the model with its Hugging Face
+  repository id (e.g. vllm-sr/d3-mini) and call /v1/systemone.
+
+health_check_path: /health
+parameter_format: space
+
+# The images' own entrypoint starts the Semantic Router; replace it with the
+# model runtime to serve a single model.
+default_entrypoint: vllm-srun
+
+default_run_command: >-
+  serve {{model_path}}
+  --host {{worker_ip}}
+  --port {{port}}
+  --served-model-name {{model_name}}
+
+common_parameters:
+  - --device
+  - --served-model-name
+  - --memory-budget
+  - --max-num-seqs
+  - --max-num-batched-tokens
+  - --batch-window-ms
+  - --dtype
+  - --threads
+  - --revision
+  - --engine
+  - --family
+  - --offline
+  - --cache-dir
+  - --log-level
+
+version_configs:
+  cuda:
+    image_name: ghcr.io/vllm-project/semantic-router/vllm-sr-cuda:latest
+    custom_framework: cuda
+    # Pin the device: with auto, a GPU that cannot hold the model makes the
+    # placement fall back to the CPU, where the load-time golden verification
+    # then fails on hardware without AVX512-BF16. Pinned, an out-of-memory GPU
+    # fails fast instead. GPUStack injects only the GPUs allocated to the
+    # instance, renumbered from 0, so cuda:0 is the first allocated GPU
+    # regardless of its physical index.
+    run_command: >-
+      serve {{model_path}} --device cuda:0
+      --host {{worker_ip}} --port {{port}}
+      --served-model-name {{model_name}}
+  rocm:
+    image_name: ghcr.io/vllm-project/semantic-router/vllm-sr-rocm:latest
+    custom_framework: rocm
+    run_command: >-
+      serve {{model_path}} --device rocm:0
+      --host {{worker_ip}} --port {{port}}
+      --served-model-name {{model_name}}
+  cpu:
+    image_name: ghcr.io/vllm-project/semantic-router/vllm-sr:latest
+    custom_framework: cpu
+    run_command: >-
+      serve {{model_path}} --device cpu
+      --host {{worker_ip}} --port {{port}}
+      --served-model-name {{model_name}}
+
+default_version: cuda
+is_built_in: false
+
+framework_index_map:
+  cuda:
+    - cuda
+  rocm:
+    - rocm
+  cpu:
+    - cpu

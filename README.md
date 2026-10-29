@@ -58,6 +58,9 @@ The following community backends are currently available:
   - [Text-Embeddings-Inference](https://github.com/huggingface/text-embeddings-inference) [Docs](https://huggingface.co/docs/text-embeddings-inference/index)
   - [mis-tei](https://www.hiascend.com/developer/ascendhub/detail/07a016975cc341f3a5ae131f2b52399d)
 
+- **Decision**
+  - [vLLM Semantic Router](https://github.com/vllm-project/semantic-router) [Docs](./vllm-sr/README.md)
+
 - **Audio**
   - Text-to-Speech
     - [Kokoro-FastAPI](https://github.com/remsky/Kokoro-FastAPI)
