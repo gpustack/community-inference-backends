@@ -59,6 +59,8 @@ The following community backends are currently available:
   - [mis-tei](https://www.hiascend.com/developer/ascendhub/detail/07a016975cc341f3a5ae131f2b52399d)
 
 - **Audio**
+  - Speech Recognition (ASR)
+    - [CrispASR](https://github.com/CrispStrobe/CrispASR) [Docs](./crispasr/README.md)
   - Text-to-Speech
     - [Kokoro-FastAPI](https://github.com/remsky/Kokoro-FastAPI)
 

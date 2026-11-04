@@ -1,0 +1,51 @@
+backend_name: CrispASR
+description: |
+  CrispASR (https://github.com/CrispStrobe/CrispASR) is a unified C++ speech engine and whisper.cpp fork that runs 145+ ASR and TTS backends from a single binary with GGUF models, without Python dependencies. In server mode it exposes an OpenAI-compatible audio transcription API (POST /v1/audio/transcriptions) plus TTS (POST /v1/audio/speech), diarization, VAD, punctuation restoration and streaming.
+
+  The inference backend is auto-detected from the GGUF model metadata; use --backend to force a specific one.
+health_check_path: /health
+default_entrypoint: crispasr
+default_run_command: >-
+  --server
+  --host 0.0.0.0
+  --port {{port}}
+  -m "{{model_path}}"
+parameter_format: space
+common_parameters:
+  - --backend
+  - -l
+  - --n-gpu-layers
+  - --threads
+  - --server-workers
+  - --punc-model
+  - --vad
+  - --vad-model
+  - --truecase-model
+  - --diarize
+  - --diarize-method
+  - --sherpa-segment-model
+  - --diarize-embedder
+  - --auto-download
+  - --gpu-backend
+  - --no-gpu
+  - --ws-port
+  - --cors-origin
+  - --no-warmup
+  - --voice-dir
+  - --model-quant
+  - --cache-dir
+  - --strict-pipeline
+version_configs:
+  cuda:
+    image_name: ghcr.io/crispstrobe/crispasr:main-cuda
+    custom_framework: cuda
+  cpu:
+    image_name: ghcr.io/crispstrobe/crispasr:main
+    custom_framework: cpu
+default_version: cuda
+is_built_in: false
+framework_index_map:
+  cuda:
+    - cuda
+  cpu:
+    - cpu
